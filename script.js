@@ -282,6 +282,7 @@ function checkWin() {
       bestEl.innerText = t + "s";
     }
 
+    game.remove(ball);
     overlay.style.display = "flex";
   }
 }
