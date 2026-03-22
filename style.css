@@ -87,3 +87,19 @@ button {
   color: white;
   border-radius: 6px;
 }
+
+/* ===== MOBILE FIX (keep design same but scale) ===== */
+@media (max-width: 480px) {
+
+  body {
+    justify-content: flex-start;
+    padding-top: 200px;
+  }
+
+  #hud,
+  #game {
+    transform: scale(0.85);
+    transform-origin: top center;
+  }
+
+}

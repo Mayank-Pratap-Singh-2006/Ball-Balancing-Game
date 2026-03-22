@@ -18,13 +18,17 @@ const cellSize = size / cols;
 const ballSize = 18;
 const goalSize = 16;
 
-let grid = [], walls = [];
+let grid = [],
+  walls = [];
 let ball, goal;
 
 /* Physics */
-let x = 0, y = 0;
-let vx = 0, vy = 0;
-let tiltX = 0, tiltY = 0;
+let x = 0,
+  y = 0;
+let vx = 0,
+  vy = 0;
+let tiltX = 0,
+  tiltY = 0;
 
 let running = false;
 let loopId = null;
@@ -47,7 +51,7 @@ startBtn.onclick = async () => {
     if (p !== "granted") return;
   }
 
-  window.addEventListener("deviceorientation", e => {
+  window.addEventListener("deviceorientation", (e) => {
     tiltX = e.gamma || 0;
     tiltY = e.beta || 0;
   });
@@ -55,7 +59,9 @@ startBtn.onclick = async () => {
   startBtn.style.display = "none";
   startGame();
 };
-
+game.innerHTML = "";
+walls = [];
+createMaze();
 /* ===== START GAME ===== */
 function startGame() {
   overlay.style.display = "none";
@@ -68,10 +74,6 @@ function startGame() {
   vx = 0;
   vy = 0;
 
-  game.innerHTML = "";
-  walls = [];
-
-  createMaze();
   createEntities();
 
   /* centered start */
@@ -93,7 +95,7 @@ function createMaze() {
     for (let c = 0; c < cols; c++) {
       grid[r][c] = {
         visited: false,
-        walls: { t: true, r: true, b: true, l: true }
+        walls: { t: true, r: true, b: true, l: true },
       };
     }
   }
@@ -117,29 +119,30 @@ function generate(r, c) {
   grid[r][c].visited = true;
 
   let dirs = shuffle([
-    ["t",-1,0],
-    ["r",0,1],
-    ["b",1,0],
-    ["l",0,-1]
+    ["t", -1, 0],
+    ["r", 0, 1],
+    ["b", 1, 0],
+    ["l", 0, -1],
   ]);
 
   for (let [d, dr, dc] of dirs) {
-    let nr = r + dr, nc = c + dc;
+    let nr = r + dr,
+      nc = c + dc;
 
-    if (nr>=0 && nc>=0 && nr<rows && nc<cols && !grid[nr][nc].visited) {
+    if (nr >= 0 && nc >= 0 && nr < rows && nc < cols && !grid[nr][nc].visited) {
       grid[r][c].walls[d] = false;
 
-      if (d==="t") grid[nr][nc].walls.b = false;
-      if (d==="r") grid[nr][nc].walls.l = false;
-      if (d==="b") grid[nr][nc].walls.t = false;
-      if (d==="l") grid[nr][nc].walls.r = false;
+      if (d === "t") grid[nr][nc].walls.b = false;
+      if (d === "r") grid[nr][nc].walls.l = false;
+      if (d === "b") grid[nr][nc].walls.t = false;
+      if (d === "l") grid[nr][nc].walls.r = false;
 
       generate(nr, nc);
     }
   }
 }
 
-function shuffle(a){
+function shuffle(a) {
   for (let i = a.length - 1; i > 0; i--) {
     let j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
@@ -147,16 +150,16 @@ function shuffle(a){
   return a;
 }
 
-function addWall(x,y,w,h){
+function addWall(x, y, w, h) {
   let d = document.createElement("div");
   d.className = "wall";
-  d.style.left = x+"px";
-  d.style.top = y+"px";
-  d.style.width = w+"px";
-  d.style.height = h+"px";
+  d.style.left = x + "px";
+  d.style.top = y + "px";
+  d.style.width = w + "px";
+  d.style.height = h + "px";
   game.appendChild(d);
 
-  walls.push({x,y,w,h});
+  walls.push({ x, y, w, h });
 }
 
 /* ===== ENTITIES ===== */
@@ -235,11 +238,12 @@ function update() {
 
 /* collision */
 function collide(px, py) {
-  return walls.some(w =>
-    px < w.x + w.w &&
-    px + ballSize > w.x &&
-    py < w.y + w.h &&
-    py + ballSize > w.y
+  return walls.some(
+    (w) =>
+      px < w.x + w.w &&
+      px + ballSize > w.x &&
+      py < w.y + w.h &&
+      py + ballSize > w.y,
   );
 }
 
