@@ -6,7 +6,7 @@ const startBtn = document.getElementById("startBtn");
 const overlay = document.getElementById("overlay");
 const restartBtn = document.getElementById("restartBtn");
 
-/* ===== FORCE UI RESET ===== */
+/* ===== FORCE UI ===== */
 overlay.style.display = "none";
 
 /* ===== SETTINGS ===== */
@@ -14,6 +14,9 @@ const size = 360;
 const rows = 12;
 const cols = 12;
 const cellSize = size / cols;
+
+const ballSize = 18;
+const goalSize = 16;
 
 let grid = [], walls = [];
 let ball, goal;
@@ -26,18 +29,18 @@ let tiltX = 0, tiltY = 0;
 let running = false;
 let loopId = null;
 let startTime = 0;
-
-/* 🔥 Critical */
 let hasMoved = false;
 
-const friction = 0.97;
-const sensitivity = 0.35;
+/* Physics tuning */
+const friction = 0.98;
+const accel = 0.25;
+const maxSpeed = 6;
 
 /* ===== BEST ===== */
 let best = localStorage.getItem("best");
 if (best) bestEl.innerText = best + "s";
 
-/* ===== START BUTTON ===== */
+/* ===== START ===== */
 startBtn.onclick = async () => {
   if (typeof DeviceOrientationEvent.requestPermission === "function") {
     const p = await DeviceOrientationEvent.requestPermission();
@@ -55,10 +58,8 @@ startBtn.onclick = async () => {
 
 /* ===== START GAME ===== */
 function startGame() {
-  /* 🔥 ALWAYS HIDE OVERLAY FIRST */
   overlay.style.display = "none";
 
-  /* Stop previous loop */
   if (loopId) cancelAnimationFrame(loopId);
 
   running = false;
@@ -67,15 +68,13 @@ function startGame() {
   vx = 0;
   vy = 0;
 
-  /* Clear */
   game.innerHTML = "";
   walls = [];
 
   createMaze();
   createEntities();
 
-  /* Start position */
-  const ballSize = 18;
+  /* centered start */
   x = (cellSize - ballSize) / 2;
   y = (cellSize - ballSize) / 2;
 
@@ -162,19 +161,12 @@ function addWall(x,y,w,h){
 
 /* ===== ENTITIES ===== */
 function createEntities() {
-  const ballSize = 18;
-  const goalSize = 16;
-
   ball = document.createElement("div");
   ball.className = "ball";
-  ball.style.width = ballSize + "px";
-  ball.style.height = ballSize + "px";
   game.appendChild(ball);
 
   goal = document.createElement("div");
   goal.className = "goal";
-  goal.style.width = goalSize + "px";
-  goal.style.height = goalSize + "px";
 
   const gx = (cols - 1) * cellSize + (cellSize - goalSize) / 2;
   const gy = (rows - 1) * cellSize + (cellSize - goalSize) / 2;
@@ -197,42 +189,57 @@ function loop() {
   loopId = requestAnimationFrame(loop);
 }
 
-/* ===== PHYSICS ===== */
+/* ===== ADVANCED PHYSICS ===== */
 function update() {
   let prevX = x;
   let prevY = y;
 
-  vx += tiltX * sensitivity;
-  vy += tiltY * sensitivity;
+  /* acceleration */
+  vx += tiltX * accel;
+  vy += tiltY * accel;
 
+  /* friction */
   vx *= friction;
   vy *= friction;
 
-  let nx = x + vx;
-  let ny = y + vy;
+  /* cap speed */
+  vx = Math.max(-maxSpeed, Math.min(maxSpeed, vx));
+  vy = Math.max(-maxSpeed, Math.min(maxSpeed, vy));
 
-  if (!hit(nx, y)) x = nx;
-  if (!hit(x, ny)) y = ny;
+  let nextX = x + vx;
+  let nextY = y + vy;
 
-  const s = 18;
-  x = Math.max(0, Math.min(size - s, x));
-  y = Math.max(0, Math.min(size - s, y));
+  /* X movement */
+  if (!collide(nextX, y)) {
+    x = nextX;
+  } else {
+    vx = 0;
+  }
+
+  /* Y movement */
+  if (!collide(x, nextY)) {
+    y = nextY;
+  } else {
+    vy = 0;
+  }
+
+  /* bounds */
+  x = Math.max(0, Math.min(size - ballSize, x));
+  y = Math.max(0, Math.min(size - ballSize, y));
 
   /* movement detection */
-  if (Math.abs(x - prevX) > 0.5 || Math.abs(y - prevY) > 0.5) {
+  if (Math.abs(x - prevX) > 0.3 || Math.abs(y - prevY) > 0.3) {
     hasMoved = true;
   }
 }
 
-/* Collision */
-function hit(px, py) {
-  const s = 18;
-
+/* collision */
+function collide(px, py) {
   return walls.some(w =>
     px < w.x + w.w &&
-    px + s > w.x &&
+    px + ballSize > w.x &&
     py < w.y + w.h &&
-    py + s > w.y
+    py + ballSize > w.y
   );
 }
 
@@ -251,9 +258,6 @@ function updateTime() {
 /* ===== WIN ===== */
 function checkWin() {
   if (!hasMoved) return;
-
-  const ballSize = 18;
-  const goalSize = 16;
 
   const gx = (cols - 1) * cellSize + (cellSize - goalSize) / 2;
   const gy = (rows - 1) * cellSize + (cellSize - goalSize) / 2;
@@ -274,7 +278,6 @@ function checkWin() {
       bestEl.innerText = t + "s";
     }
 
-    /* 🔥 SHOW OVERLAY */
     overlay.style.display = "flex";
   }
 }
